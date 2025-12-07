@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedSync Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="navbar-title">MedSync</div>
+            <div class="navbar-subtitle">Hospital Management System</div>
+        </div>
+        <div class="navbar-links">
+            <button class="nav-btn active" data-view="tasks-view">Tasks</button>
+            <button class="nav-btn" data-view="completed-view">History</button>
+            <button class="nav-btn" data-view="notes-view">Notes</button>
+            <button class="nav-btn" data-view="targets-view">Targets</button>
+        </div>
+    </nav>
+
+    <main class="app-shell">
+        
+        <div id="tasks-view" class="view active-view">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">Active Schedule</div>
+                        <div class="panel-subtitle">Current & Upcoming Tasks</div>
+                    </div>
+                    <div id="active-count-label" class="badge">0 Active</div>
+                </div>
+
+                <div class="task-form">
+                    <div class="field-group task-form-row-full">
+                        <label class="field-label">Task Title</label>
+                        <input type="text" id="task-title" class="field-input" placeholder="Task Name...">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Start Time</label>
+                        <input type="time" id="task-start" class="field-input">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">End Time</label>
+                        <input type="time" id="task-end" class="field-input">
+                    </div>
+                    <div class="field-group task-form-row-full">
+                        <label class="field-label">Description (Optional)</label>
+                        <textarea id="task-desc" class="field-textarea" placeholder="Task Description..."></textarea>
+                    </div>
+                    <div class="task-form-actions">
+                        <button id="add-task-btn" class="btn-primary">Add Task</button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 50px">Status</th>
+                                <th>Task</th>
+                                <th style="width: 100px">Start</th>
+                                <th style="width: 100px">End</th>
+                                <th>Description</th>
+                                <th style="width: 80px">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="task-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="completed-view" class="view">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">Task History</div>
+                        <div class="panel-subtitle">Past & Expired Tasks</div>
+                    </div>
+                    <div id="completed-count-label" class="badge">0 Records</div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 50px">Status</th>
+                                <th>Task</th>
+                                <th style="width: 100px">Start</th>
+                                <th style="width: 100px">End</th>
+                                <th>Description</th>
+                                <th style="width: 80px">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completed-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="notes-view" class="view">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">Notes</div>
+                        <div class="panel-subtitle">Secure local storage</div>
+                    </div>
+                    <div id="notes-status" class="status-text">Ready</div>
+                </div>
+
+                <div class="note-creator">
+                    <textarea id="notes-area" class="note-input-area" placeholder="Type your note here..."></textarea>
+                    <div class="note-toolbar">
+                        <span class="note-hint">Auto-saves to local database</span>
+                        <button id="add-note-btn" class="btn-primary">Save Note</button>
+                    </div>
+                </div>
+
+                <div id="notes-grid-container">
+                </div>
+            </div>
+        </div>
+
+        <div id="targets-view" class="view">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">Targets & Goals</div>
+                        <div class="panel-subtitle">Long-term objectives</div>
+                    </div>
+                </div>
+
+                <div class="target-controls">
+                    <input type="text" id="target-title-input" placeholder="Enter goal title..." class="field-input">
+                    <input type="date" id="target-date-input" class="field-input">
+                    <button id="add-target-btn" class="btn-primary">Set Goal</button>
+                </div>
+
+                <div id="targets-container">
+                </div>
+            </div>
+        </div>
+
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
