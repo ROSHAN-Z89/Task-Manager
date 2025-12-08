@@ -5,24 +5,19 @@
     --secondary: #20c997;
     --accent: #6610f2;
     --danger: #dc3545;
-    
     --bg-body: #050608;
     --bg-panel: #0b0e11;
     --bg-card: #111418;
     --bg-input: #0f1216;
-    
     --text-main: #eef2f5;
     --text-muted: #8b9bb4;
-    
     --border-color: rgba(23, 162, 184, 0.2);
     --glass: rgba(11, 14, 17, 0.95);
     --radius-sm: 4px;
     --radius-md: 8px;
     --radius-lg: 12px;
-    
     --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
     --transition: all 0.2s ease-in-out;
-    
     --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
 }
@@ -50,7 +45,6 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg-body); }
 ::-webkit-scrollbar-thumb { background: #2c3e50; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
-
 
 .navbar {
     position: fixed;
@@ -118,7 +112,6 @@ body {
     box-shadow: 0 2px 10px rgba(23, 162, 184, 0.3);
 }
 
-
 .app-shell {
     width: 100%;
     max-width: 1200px;
@@ -176,7 +169,6 @@ body {
     border-radius: 4px;
     border: 1px solid rgba(23, 162, 184, 0.2);
 }
-
 
 .task-form {
     display: grid;
@@ -253,7 +245,6 @@ body {
     background: var(--primary-hover);
     transform: translateY(-1px);
 }
-
 
 .table-container {
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -346,7 +337,6 @@ tr.completed-active .task-checkbox {
 .delete-btn:hover {
     background: rgba(220, 53, 69, 0.1);
 }
-
 
 .note-creator {
     background: var(--bg-card);
@@ -456,10 +446,8 @@ tr.completed-active .task-checkbox {
 
 .btn-edit { color: var(--primary); border: 1px solid rgba(23, 162, 184, 0.3) !important; margin-right: 5px; }
 .btn-delete { color: var(--danger); border: 1px solid rgba(220, 53, 69, 0.3) !important; }
-
 .btn-edit:hover { background: rgba(23, 162, 184, 0.1); }
 .btn-delete:hover { background: rgba(220, 53, 69, 0.1); }
-
 
 .target-controls {
     display: flex;
@@ -521,4 +509,89 @@ tr.completed-active .task-checkbox {
     margin-top: 12px;
     font-size: 11px;
     color: var(--text-muted);
+}
+
+/* --- Mobile Menu Button (Default Hidden) --- */
+.mobile-menu-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    flex-direction: column;
+    gap: 5px;
+    padding: 5px;
+    z-index: 1002;
+}
+
+.mobile-menu-btn span {
+    width: 24px;
+    height: 2px;
+    background-color: var(--text-main);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+    /* Adjust Navbar Padding */
+    .navbar {
+        padding: 0 20px;
+    }
+
+    /* Show Hamburger Button */
+    .mobile-menu-btn {
+        display: flex;
+    }
+
+    /* Transform Navbar Links into Dropdown */
+    .navbar-links {
+        display: none; /* Hidden by default */
+        position: absolute;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: var(--bg-card);
+        flex-direction: column;
+        padding: 20px;
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    }
+
+    /* Class to show menu when clicked */
+    .navbar-links.mobile-open {
+        display: flex;
+        animation: slideDown 0.2s ease-out;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Mobile Nav Buttons */
+    .nav-btn {
+        width: 100%;
+        text-align: left;
+        padding: 12px 16px;
+        background: rgba(255,255,255,0.03);
+    }
+
+    .nav-btn:hover, .nav-btn.active {
+        background: var(--primary);
+    }
+
+    /* Stack Form Inputs */
+    .task-form {
+        grid-template-columns: 1fr;
+    }
+
+    /* Allow Table Scrolling */
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    /* Ensure table doesn't shrink too much */
+    table {
+        min-width: 600px; 
+    }
 }
