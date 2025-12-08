@@ -12,10 +12,8 @@ function createCell(text) {
 // Helper to check if time string (HH:MM) is in the past relative to now
 function isTaskExpired(endTimeStr) {
     if (!endTimeStr) return false;
-    
     const now = new Date();
     const [h, m] = endTimeStr.split(':').map(Number);
-    
     // Create date object for today with the task's end time
     const taskEnd = new Date();
     taskEnd.setHours(h, m, 0, 0);
@@ -87,22 +85,20 @@ async function initDatabase() {
         console.log('Database initialized');
         await loadTasks();
         await loadNotesFromDB();
-        loadGoals(); 
+        loadGoals();
         
         // Start the expiration checker loop
         setInterval(checkTaskExpiry, 30000); // Check every 30 seconds
-
     } catch (error) {
         console.error('Database init failed:', error);
     }
 }
 
 // === TASKS FUNCTIONS ===
-
 async function saveTaskToDB(task, isCompleted = false) {
     if (!db) return;
     db.run(`INSERT INTO tasks (title, start_time, end_time, description, completed) VALUES (?, ?, ?, ?, ?)`, 
-        [task.title, task.start || '', task.end || '', task.description || '', isCompleted ? 1 : 0]);
+    [task.title, task.start || '', task.end || '', task.description || '', isCompleted ? 1 : 0]);
 }
 
 async function updateTaskCompletion(id, completed) {
@@ -141,7 +137,7 @@ async function loadTasks() {
 
     activeTasks.forEach(t => taskTbody.appendChild(buildTaskRow(t)));
     expiredTasks.forEach(t => completedTbody.appendChild(buildTaskRow(t)));
-    
+
     updateCounts(activeTasks.length, expiredTasks.length);
 }
 
@@ -166,14 +162,12 @@ function buildTaskRow(task) {
     checkbox.type = 'checkbox';
     checkbox.className = 'task-checkbox';
     checkbox.checked = task.completed;
-    
     checkbox.addEventListener('change', async () => {
         // Just update DB and reload to show visual strikethrough
         // It will NOT move tables unless time is also expired
         await updateTaskCompletion(task.id, checkbox.checked);
-        loadTasks(); 
+        loadTasks();
     });
-    
     checkTd.appendChild(checkbox);
 
     // Delete Button
@@ -216,14 +210,13 @@ async function addTaskFromInputs() {
 
     saveTaskToDB(task);
     await loadTasks();
-    
+
     titleInput.value = '';
     descInput.value = '';
     titleInput.focus();
 }
 
 // === NOTES FUNCTIONS ===
-
 async function saveNoteToDB(content) {
     if (!db) return;
     db.run(`INSERT INTO notes (content) VALUES (?)`, [content]);
@@ -258,29 +251,29 @@ async function loadNotesFromDB() {
 function createNoteCard(note) {
     const card = document.createElement('div');
     card.className = 'note-card';
-    
+
     const contentDiv = document.createElement('div');
     contentDiv.className = 'note-card-content';
     contentDiv.textContent = note.content;
-    
+
     const footer = document.createElement('div');
     footer.className = 'note-card-footer';
     
     const dateSpan = document.createElement('span');
     dateSpan.className = 'note-date';
     dateSpan.textContent = new Date(note.updated_at).toLocaleDateString();
-    
+
     const actions = document.createElement('div');
     actions.className = 'note-actions';
-    
+
     const editBtn = document.createElement('button');
     editBtn.textContent = 'EDIT';
     editBtn.className = 'btn-edit';
-    
+
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = 'REMOVE';
     deleteBtn.className = 'btn-delete';
-    
+
     // Edit Logic
     let isEditing = false;
     editBtn.onclick = async () => {
@@ -308,18 +301,17 @@ function createNoteCard(note) {
             await loadNotesFromDB();
         }
     };
-    
+
     actions.append(editBtn, deleteBtn);
     footer.append(dateSpan, actions);
     card.append(contentDiv, footer);
-    
+
     return card;
 }
 
 addNoteBtn.addEventListener('click', async () => {
     const content = notesArea.value.trim();
     if (!content) return;
-    
     await saveNoteToDB(content);
     notesArea.value = '';
     loadNotesFromDB();
@@ -328,11 +320,10 @@ addNoteBtn.addEventListener('click', async () => {
 });
 
 // === TARGETS / GOALS ===
-
 function createGoalCard(goal) {
     const card = document.createElement('div');
     card.className = 'goal-card';
-    
+
     const header = document.createElement('div');
     header.className = 'goal-header';
     header.innerHTML = `<span class="goal-title">${goal.title}</span>`;
@@ -348,24 +339,26 @@ function createGoalCard(goal) {
 
     const timerDiv = document.createElement('div');
     timerDiv.className = 'goal-timer';
-    
+
     const progressTrack = document.createElement('div');
     progressTrack.className = 'progress-track';
+    
     const progressFill = document.createElement('div');
     progressFill.className = 'progress-fill';
     progressTrack.appendChild(progressFill);
-    
+
     const footer = document.createElement('div');
     footer.className = 'goal-footer';
     footer.innerHTML = `<span>Start: ${new Date(goal.startDate).toLocaleDateString()}</span><span>Target: ${new Date(goal.endDate).toLocaleDateString()}</span>`;
-    
+
     card.append(header, timerDiv, progressTrack, footer);
-    
+
     // Timer Logic
     const updateTimer = () => {
         const now = new Date().getTime();
         const end = new Date(goal.endDate).getTime();
         const start = new Date(goal.startDate).getTime();
+        
         const total = end - start;
         const left = end - now;
 
@@ -379,7 +372,7 @@ function createGoalCard(goal) {
         const days = Math.floor(left / (1000 * 60 * 60 * 24));
         const hours = Math.floor((left / (1000 * 60 * 60)) % 24);
         timerDiv.textContent = `${days}d ${hours}h LEFT`;
-        
+
         const elapsed = now - start;
         const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
         progressFill.style.width = `${pct}%`;
@@ -387,7 +380,7 @@ function createGoalCard(goal) {
 
     setInterval(updateTimer, 60000); // Update every minute
     updateTimer();
-    
+
     card.goalData = goal;
     targetsContainer.appendChild(card);
 }
@@ -413,13 +406,13 @@ addTargetBtn.addEventListener('click', () => {
         alert('Please enter title and date');
         return;
     }
-    
+
     const goal = {
         title,
         startDate: new Date().toISOString(),
         endDate: new Date(dateVal + 'T23:59:59').toISOString()
     };
-    
+
     createGoalCard(goal);
     saveGoalsToLocal();
     targetTitleInput.value = '';
@@ -442,13 +435,47 @@ navButtons.forEach(btn => {
         // Update Buttons
         navButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        
+
         // Update Views
         const targetId = btn.getAttribute('data-view');
         views.forEach(v => {
             if (v.id === targetId) v.classList.add('active-view');
             else v.classList.remove('active-view');
         });
+    });
+});
+
+// Mobile Menu Logic
+const mobileBtn = document.querySelector('.mobile-menu-btn');
+const navLinksContainer = document.querySelector('.navbar-links');
+
+if (mobileBtn) {
+    mobileBtn.addEventListener('click', () => {
+        navLinksContainer.classList.toggle('mobile-open');
+        
+        const spans = mobileBtn.querySelectorAll('span');
+        if (navLinksContainer.classList.contains('mobile-open')) {
+            spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
+            spans[1].style.opacity = '0';
+            spans[2].style.transform = 'rotate(-45deg) translate(5px, -5px)';
+        } else {
+            spans[0].style.transform = 'none';
+            spans[1].style.opacity = '1';
+            spans[2].style.transform = 'none';
+        }
+    });
+}
+
+// Close mobile menu when a nav button is clicked
+navButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (navLinksContainer.classList.contains('mobile-open')) {
+            navLinksContainer.classList.remove('mobile-open');
+            const spans = mobileBtn.querySelectorAll('span');
+            spans[0].style.transform = 'none';
+            spans[1].style.opacity = '1';
+            spans[2].style.transform = 'none';
+        }
     });
 });
 
