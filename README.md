@@ -1,7 +1,8 @@
-# MedSync — Smart Task & Goals Manager
+# Task-Sync — Smart Task, Notes & Goals Manager
 
-Welcome to **MedSync**, a clean, modern **Task Manager Web App** built to handle your **daily tasks, notes, and long-term goals** in one powerful dashboard.
-This project is designed for productivity, speed, and full ownership of data. Everything runs **locally in the browser** using SQLite and LocalStorage.
+Welcome to **Task-Sync**, a modern, offline-first **Productivity Web App** designed to manage your **daily tasks, personal notes, and long-term goals** in one clean, responsive dashboard.  
+The entire system runs **locally inside your browser** using SQLite (via SQL.js) and LocalStorage — giving you **full ownership** of your data.
+
 
 Task Manager | Notes Vault | Goal Tracker | Offline-First Productivity Tool
 
