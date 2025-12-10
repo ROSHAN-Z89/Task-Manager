@@ -134,7 +134,7 @@ All data stays inside the user’s browser.
 
 ## Customization Tips
 
-* Rename **MedSync** directly from `index.html`
+* Rename **TaskSync** directly from `index.html`
 * UI color variables are defined inside `:root` in `style.css`
 * Task expiry logic is handled here:
 
