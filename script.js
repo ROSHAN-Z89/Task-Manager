@@ -13,14 +13,16 @@ function createCell(text) {
 function isTaskExpired(endTimeStr) {
   if (!endTimeStr) return false;
 
-  const now = new Date();
-  const [h, m] = endTimeStr.split(":").map(Number);
+  const parts = endTimeStr.split(":");
+  if (parts.length !== 2) return false; // guard invalid formats
 
-  // Create date object for today with the task's end time
+  const h = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (Number.isNaN(h) || Number.isNaN(m)) return false;
+
+  const now = new Date();
   const taskEnd = new Date();
   taskEnd.setHours(h, m, 0, 0);
-
-  // If we want tasks to "expire" strictly when time passes
   return now > taskEnd;
 }
 
@@ -62,7 +64,7 @@ async function initDatabase() {
     });
 
     // Try to load from localStorage first
-    const savedDb = localStorage.getItem("medsync_db");
+    const savedDb = localStorage.getItem("tasksync_db");
     if (savedDb) {
       const uInt8Array = Uint8Array.from(
         atob(savedDb),
@@ -71,33 +73,32 @@ async function initDatabase() {
       db = new SQL.Database(uInt8Array);
     } else {
       db = new SQL.Database();
+
+      // Create tasks table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS tasks (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          starttime TEXT,
+          endtime TEXT,
+          description TEXT,
+          completed INTEGER DEFAULT 0,
+          createdat DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // Create notes table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS notes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          content TEXT NOT NULL,
+          createdat DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedat DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
     }
 
-    // Create tasks table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS tasks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        starttime TEXT,
-        endtime TEXT,
-        description TEXT,
-        completed INTEGER DEFAULT 0,
-        createdat DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Create notes table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS notes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        content TEXT NOT NULL,
-        createdat DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedat DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
     console.log("Database initialized");
-
     await loadTasks();
     await loadNotesFromDB();
     loadGoals();
@@ -118,28 +119,30 @@ function persistDatabase() {
       .map((b) => String.fromCharCode(b))
       .join("")
   );
-  localStorage.setItem("medsync_db", base64);
+  localStorage.setItem("tasksync_db", base64);
 }
 
 // TASKS FUNCTIONS
-
 async function saveTaskToDB(task, isCompleted = false) {
   if (!db) return;
-
   db.run(
     `
     INSERT INTO tasks (title, starttime, endtime, description, completed)
     VALUES (?, ?, ?, ?, ?);
   `,
-    [task.title, task.start || "", task.end || "", task.description || "", isCompleted ? 1 : 0]
+    [
+      task.title,
+      task.start || "",
+      task.end || "",
+      task.description || "",
+      isCompleted ? 1 : 0,
+    ]
   );
-
   persistDatabase();
 }
 
 async function updateTaskCompletion(id, completed) {
   if (!db) return;
-
   db.run(
     `
     UPDATE tasks
@@ -148,13 +151,11 @@ async function updateTaskCompletion(id, completed) {
   `,
     [completed ? 1 : 0, id]
   );
-
   persistDatabase();
 }
 
 async function deleteTaskFromDB(id) {
   if (!db) return;
-
   db.run(
     `
     DELETE FROM tasks
@@ -162,11 +163,10 @@ async function deleteTaskFromDB(id) {
   `,
     [id]
   );
-
   persistDatabase();
 }
 
-// UPDATED: Logic to separate tasks based on Time Expiry
+// Logic to separate tasks based on Time Expiry
 async function loadTasks() {
   if (!db) return;
 
@@ -189,10 +189,10 @@ async function loadTasks() {
   taskTbody.innerHTML = "";
   completedTbody.innerHTML = "";
 
-  // Filter Logic:
   // Active Table: NOT Expired regardless of checked/unchecked
-  // History Table: Expired regardless of checked/unchecked
   const activeTasks = tasks.filter((t) => !isTaskExpired(t.end));
+
+  // History Table: Expired regardless of checked/unchecked
   const expiredTasks = tasks.filter((t) => isTaskExpired(t.end));
 
   activeTasks.forEach((t) => {
@@ -227,14 +227,12 @@ function buildTaskRow(task) {
   checkbox.type = "checkbox";
   checkbox.className = "task-checkbox";
   checkbox.checked = task.completed;
-
   checkbox.addEventListener("change", async () => {
     // Just update DB and reload to show visual strikethrough
     // It will NOT move tables unless time is also expired
     await updateTaskCompletion(task.id, checkbox.checked);
     loadTasks();
   });
-
   checkTd.appendChild(checkbox);
 
   // Delete Button
@@ -242,12 +240,10 @@ function buildTaskRow(task) {
   const delBtn = document.createElement("button");
   delBtn.textContent = "REMOVE";
   delBtn.className = "delete-btn";
-
   delBtn.onclick = async () => {
     await deleteTaskFromDB(task.id);
     await loadTasks();
   };
-
   delTd.appendChild(delBtn);
 
   tr.append(
@@ -284,7 +280,7 @@ async function addTaskFromInputs() {
   const task = {
     title,
     start: startInput.value || currentTime,
-    end: endInput.value || "23:59", // Default end of day
+    end: endInput.value || "23:59", // Default end of day in HH:MM
     description: descInput.value.trim(),
   };
 
@@ -299,10 +295,8 @@ async function addTaskFromInputs() {
 }
 
 // NOTES FUNCTIONS
-
 async function saveNoteToDB(content) {
   if (!db) return;
-
   db.run(
     `
     INSERT INTO notes (content)
@@ -310,13 +304,11 @@ async function saveNoteToDB(content) {
   `,
     [content]
   );
-
   persistDatabase();
 }
 
 async function deleteNoteFromDB(id) {
   if (!db) return;
-
   db.run(
     `
     DELETE FROM notes
@@ -324,13 +316,11 @@ async function deleteNoteFromDB(id) {
   `,
     [id]
   );
-
   persistDatabase();
 }
 
 async function updateNoteInDB(id, content) {
   if (!db) return;
-
   db.run(
     `
     UPDATE notes
@@ -339,13 +329,11 @@ async function updateNoteInDB(id, content) {
   `,
     [content, id]
   );
-
   persistDatabase();
 }
 
 async function loadNotesFromDB() {
   if (!db) return;
-
   const res = db.exec(`
     SELECT id, content, createdat, updatedat
     FROM notes
@@ -423,7 +411,6 @@ function createNoteCard(note) {
   actions.append(editBtn, deleteBtn);
   footer.append(dateSpan, actions);
   card.append(contentDiv, footer);
-
   return card;
 }
 
@@ -440,7 +427,6 @@ addNoteBtn.addEventListener("click", async () => {
 });
 
 // TARGETS / GOALS (localStorage, not DB)
-
 function createGoalCard(goal) {
   const card = document.createElement("div");
   card.className = "goal-card";
@@ -452,12 +438,10 @@ function createGoalCard(goal) {
   const delBtn = document.createElement("button");
   delBtn.textContent = "REMOVE";
   delBtn.className = "delete-btn";
-
   delBtn.onclick = () => {
     card.remove();
     saveGoalsToLocal();
   };
-
   header.appendChild(delBtn);
 
   const timerDiv = document.createElement("div");
@@ -465,7 +449,6 @@ function createGoalCard(goal) {
 
   const progressTrack = document.createElement("div");
   progressTrack.className = "progress-track";
-
   const progressFill = document.createElement("div");
   progressFill.className = "progress-fill";
   progressTrack.appendChild(progressFill);
@@ -484,6 +467,7 @@ function createGoalCard(goal) {
     const now = new Date().getTime();
     const end = new Date(goal.endDate).getTime();
     const start = new Date(goal.startDate).getTime();
+
     const total = end - start;
     const left = end - now;
 
@@ -516,11 +500,11 @@ function saveGoalsToLocal() {
   const goals = Array.from(
     targetsContainer.querySelectorAll(".goal-card")
   ).map((card) => card.goalData);
-  localStorage.setItem("medsync_goals", JSON.stringify(goals));
+  localStorage.setItem("tasksync_goals", JSON.stringify(goals));
 }
 
 function loadGoals() {
-  const stored = localStorage.getItem("medsync_goals");
+  const stored = localStorage.getItem("tasksync_goals");
   if (stored) {
     JSON.parse(stored).forEach((g) => createGoalCard(g));
   }
@@ -543,13 +527,11 @@ addTargetBtn.addEventListener("click", () => {
 
   createGoalCard(goal);
   saveGoalsToLocal();
-
   targetTitleInput.value = "";
   targetDateInput.value = "";
 });
 
 // INITIALIZATION & EVENTS
-
 addTaskBtn.addEventListener("click", addTaskFromInputs);
 
 titleInput.addEventListener("keydown", (e) => {
@@ -582,7 +564,6 @@ const navLinksContainer = document.querySelector(".navbar-links");
 if (mobileBtn) {
   mobileBtn.addEventListener("click", () => {
     navLinksContainer.classList.toggle("mobile-open");
-
     const spans = mobileBtn.querySelectorAll("span");
     if (navLinksContainer.classList.contains("mobile-open")) {
       spans[0].style.transform = "rotate(45deg) translate(5px, 5px)";
