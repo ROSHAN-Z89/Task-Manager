@@ -10,21 +10,23 @@ function createCell(text) {
 }
 
 // Helper to check if time string "HH:MM" is in the past relative to now
-function isTaskExpired(endTimeStr) {
-  if (!endTimeStr) return false;
+function isTaskExpired(task) {
+  if (!task.end || !task.date) return false;
 
-  const parts = endTimeStr.split(":");
-  if (parts.length !== 2) return false; // guard invalid formats
+  const parts = task.end.split(":");
+  if (parts.length !== 2) return false;
 
   const h = Number(parts[0]);
   const m = Number(parts[1]);
   if (Number.isNaN(h) || Number.isNaN(m)) return false;
 
-  const now = new Date();
-  const taskEnd = new Date();
+  const taskEnd = new Date(task.date + "T00:00:00");
   taskEnd.setHours(h, m, 0, 0);
+
+  const now = new Date();
   return now > taskEnd;
 }
+
 
 // DOM References
 const navButtons = document.querySelectorAll(".nav-btn");
@@ -83,6 +85,7 @@ async function initDatabase() {
           endtime TEXT,
           description TEXT,
           completed INTEGER DEFAULT 0,
+          taskdate TEXT,
           createdat DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -125,21 +128,27 @@ function persistDatabase() {
 // TASKS FUNCTIONS
 async function saveTaskToDB(task, isCompleted = false) {
   if (!db) return;
+
+  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
   db.run(
     `
-    INSERT INTO tasks (title, starttime, endtime, description, completed)
-    VALUES (?, ?, ?, ?, ?);
-  `,
+    INSERT INTO tasks (title, starttime, endtime, description, completed, taskdate)
+    VALUES (?, ?, ?, ?, ?, ?);
+    `,
     [
       task.title,
       task.start || "",
       task.end || "",
       task.description || "",
       isCompleted ? 1 : 0,
+      today
     ]
   );
+
   persistDatabase();
 }
+
 
 async function updateTaskCompletion(id, completed) {
   if (!db) return;
@@ -171,7 +180,7 @@ async function loadTasks() {
   if (!db) return;
 
   const res = db.exec(`
-    SELECT id, title, starttime, endtime, description, completed
+    SELECT id, title, starttime, endtime, description, completed, taskdate
     FROM tasks
     ORDER BY starttime ASC;
   `);
@@ -184,16 +193,14 @@ async function loadTasks() {
       end: row[3],
       description: row[4],
       completed: row[5] === 1,
+      date: row[6]
     })) || [];
 
   taskTbody.innerHTML = "";
   completedTbody.innerHTML = "";
 
-  // Active Table: NOT Expired regardless of checked/unchecked
-  const activeTasks = tasks.filter((t) => !isTaskExpired(t.end));
-
-  // History Table: Expired regardless of checked/unchecked
-  const expiredTasks = tasks.filter((t) => isTaskExpired(t.end));
+  const activeTasks = tasks.filter((t) => !isTaskExpired(t));
+  const expiredTasks = tasks.filter((t) => isTaskExpired(t));
 
   activeTasks.forEach((t) => {
     taskTbody.appendChild(buildTaskRow(t));
@@ -205,6 +212,7 @@ async function loadTasks() {
 
   updateCounts(activeTasks.length, expiredTasks.length);
 }
+
 
 // Timer function to auto-move tasks
 function checkTaskExpiry() {
