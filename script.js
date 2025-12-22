@@ -207,7 +207,7 @@ async function addTaskFromInputs() {
     return;
   }
   const now = new Date();
-  const currentTime = now.getHours().toString().padStart(2, "0") + now.getMinutes().toString().padStart(2, "0");
+  const currentTime = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
   const task = {
     title, start: startInput.value || currentTime,
     end: endInput.value || "23:59",
@@ -443,3 +443,4 @@ if (mobileBtn) {
 
 // Init
 window.addEventListener("DOMContentLoaded", initDatabase);
+
